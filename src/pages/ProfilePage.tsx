@@ -1,126 +1,119 @@
 
 import React from 'react';
-import { MessageSquare, ThumbsUp, Eye, Settings, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { posts, users } from '@/data/mockData';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LogOut, Settings, Mail } from 'lucide-react';
 
-const ProfilePage = () => {
-  const { user, logout } = useAuth();
+interface UserWithExtendedInfo {
+  id: string;
+  email: string;
+  username: string;
+  avatar?: string;
+  joinDate?: string;
+  postCount?: number;
+}
+
+const ProfilePage: React.FC = () => {
+  const { user: authUser, logout } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   
-  // Get the current user's posts
-  const userPosts = user ? posts.filter(post => post.authorId === user.id) : [];
-  
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+  // Extended user info with mock data for display purposes
+  const user: UserWithExtendedInfo = {
+    ...authUser!,
+    joinDate: new Date().toISOString(),
+    postCount: 5
   };
-  
+
   const handleLogout = () => {
     logout();
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully"
-    });
     navigate('/login');
   };
-  
+
   if (!user) {
-    navigate('/login');
-    return null;
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-[calc(100vh-60px)]">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle>Not Logged In</CardTitle>
+              <CardDescription>You need to log in to view your profile</CardDescription>
+            </CardHeader>
+            <CardFooter className="flex justify-center">
+              <Button onClick={() => navigate('/login')}>Go to Login</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </Layout>
+    );
   }
 
   return (
-    <Layout title="Profile">
-      <div className="space-y-6">
-        {/* Profile header */}
-        <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-          <Avatar className="h-24 w-24">
-            <AvatarImage src={user.avatar} />
-            <AvatarFallback>{user.username.charAt(0)}</AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-2xl font-bold">{user.username}</h2>
-            <p className="text-muted-foreground">Member since {formatDate(user.joinDate)}</p>
-            <p className="text-sm mt-1 text-muted-foreground">
-              <span className="font-medium text-foreground">{user.postCount}</span> posts
-            </p>
-            
-            <div className="flex gap-2 mt-4 justify-center sm:justify-start">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
+    <Layout showSidebar={false}>
+      <div className="max-w-4xl mx-auto">
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={user.avatar} />
+                <AvatarFallback>{user.username?.charAt(0) || 'U'}</AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-xl">{user.username}</CardTitle>
+                <CardDescription className="flex items-center gap-1 mt-1">
+                  <Mail className="h-3 w-3" />
+                  {user.email}
+                </CardDescription>
+                <CardDescription className="mt-1">
+                  Joined {user.joinDate ? format(new Date(user.joinDate), 'MMMM yyyy') : 'Recently'}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-2">
+            <div className="flex gap-4 items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Posts: {user.postCount || 0}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-1" /> Settings
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-1" /> Logout
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Tabs defaultValue="posts" className="w-full">
+          <TabsList className="w-full">
+            <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
+            <TabsTrigger value="comments" className="flex-1">Comments</TabsTrigger>
+            <TabsTrigger value="saved" className="flex-1">Saved</TabsTrigger>
+          </TabsList>
+          <TabsContent value="posts" className="mt-6">
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">No posts yet</p>
+              <Button variant="outline" className="mt-4" onClick={() => navigate('/create-post')}>
+                Create a Post
               </Button>
             </div>
-          </div>
-        </div>
-        
-        {/* Tabs section */}
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-          </TabsList>
-          
-          {/* Posts tab */}
-          <TabsContent value="posts" className="space-y-4">
-            {userPosts.length > 0 ? (
-              userPosts.map((post) => (
-                <div key={post.id} className="post-card">
-                  <h3 className="font-medium mb-2">{post.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                    {post.content}
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <div className="text-xs text-muted-foreground">
-                      {formatDate(post.createdAt)}
-                    </div>
-                    <div className="flex gap-4">
-                      <div className="post-action">
-                        <ThumbsUp className="h-4 w-4" />
-                        <span className="text-xs">{post.likes}</span>
-                      </div>
-                      <div className="post-action">
-                        <MessageSquare className="h-4 w-4" />
-                        <span className="text-xs">{post.comments}</span>
-                      </div>
-                      <div className="post-action">
-                        <Eye className="h-4 w-4" />
-                        <span className="text-xs">{post.views}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">You haven't created any posts yet.</p>
-                <Button className="mt-4">Create your first post</Button>
-              </div>
-            )}
           </TabsContent>
-          
-          {/* Activity tab */}
-          <TabsContent value="activity">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Your recent activity will appear here.</p>
+          <TabsContent value="comments" className="mt-6">
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">No comments yet</p>
+            </div>
+          </TabsContent>
+          <TabsContent value="saved" className="mt-6">
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">No saved posts yet</p>
             </div>
           </TabsContent>
         </Tabs>

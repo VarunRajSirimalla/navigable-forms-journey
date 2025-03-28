@@ -1,147 +1,125 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { MessageSquare, ThumbsUp, Eye } from 'lucide-react';
 import Layout from '@/components/Layout';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { categories, posts, users } from '@/data/mockData';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { categories, posts } from '@/data/mockData';
 
-const CategoryPage = () => {
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+  author: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  category: string;
+  tags: string[];
+  createdAt: string;
+  likes: number;
+  comments: number;
+}
+
+const CategoryPage: React.FC = () => {
   const { categoryName } = useParams<{ categoryName: string }>();
-
-  // Get category details
-  const category = categories.find(cat => cat.slug === categoryName);
-
-  // Get posts for this category
-  const { data: categoryPosts, isLoading } = useQuery({
-    queryKey: ['category', categoryName],
-    queryFn: () => new Promise(resolve => {
-      setTimeout(() => {
-        const filteredPosts = posts.filter(post => {
-          const postCategory = categories.find(cat => cat.id === post.categoryId);
-          return postCategory?.slug === categoryName;
-        });
-        resolve(filteredPosts);
-      }, 500);
-    }),
-  });
-
-  // Helper function to find author
-  const getAuthor = (authorId: string) => {
-    return users.find(user => user.id === authorId);
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
+  const [categoryPosts, setCategoryPosts] = useState<Post[]>([]);
+  const [category, setCategory] = useState<any>(null);
+  
+  useEffect(() => {
+    // Find the category
+    const foundCategory = categories.find(cat => cat.slug === categoryName);
+    setCategory(foundCategory);
+    
+    // Filter posts by category
+    const filteredPosts = posts.filter(post => post.category === foundCategory?.name);
+    setCategoryPosts(filteredPosts);
+  }, [categoryName]);
 
   if (!category) {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center py-16">
-          <h2 className="text-xl font-bold mb-4">Category not found</h2>
-          <p className="text-muted-foreground">The category you are looking for doesn't exist.</p>
-        </div>
+        <div className="p-4">Category not found</div>
       </Layout>
     );
   }
 
   return (
-    <Layout title={category.name}>
-      <div className="space-y-6">
-        {/* Category description */}
-        <div className="mb-6">
-          <p className="text-muted-foreground mb-4">{category.description}</p>
-          <div className="flex justify-between items-center">
-            <div className="flex gap-4">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Posts:</span> 
-                <span className="font-medium ml-1">{category.postCount}</span>
-              </div>
-            </div>
-            <Button>Create Post</Button>
-          </div>
+    <Layout showSidebar title={category.name}>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">
+            Explore discussions about {category.name}
+          </p>
         </div>
-
-        {/* Posts list */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Posts</h2>
-          
-          {isLoading ? (
-            // Loading state
-            Array(3).fill(null).map((_, index) => (
-              <div key={index} className="post-card">
-                <div className="flex items-start gap-3 mb-3">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                </div>
-                <Skeleton className="h-10 w-full mb-3" />
-                <div className="flex gap-4">
-                  <Skeleton className="h-4 w-12" />
-                  <Skeleton className="h-4 w-12" />
-                  <Skeleton className="h-4 w-12" />
-                </div>
-              </div>
-            ))
-          ) : categoryPosts?.length > 0 ? (
-            // Posts
-            categoryPosts.map((post: any) => {
-              const author = getAuthor(post.authorId);
-              return (
-                <div key={post.id} className="post-card">
-                  <div className="post-header">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={author?.avatar} />
-                      <AvatarFallback>{author?.username?.charAt(0) || '?'}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-medium">{post.title}</h3>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <span>{author?.username}</span>
-                        <span>•</span>
-                        <span>{formatDate(post.createdAt)}</span>
-                      </div>
+        <Button>New Post</Button>
+      </div>
+      
+      <Tabs defaultValue="recent">
+        <div className="flex items-center justify-between mb-4">
+          <TabsList>
+            <TabsTrigger value="recent">Recent</TabsTrigger>
+            <TabsTrigger value="popular">Popular</TabsTrigger>
+            <TabsTrigger value="unanswered">Unanswered</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="recent" className="space-y-4">
+          {categoryPosts && categoryPosts.length > 0 ? (
+            categoryPosts.map((post) => (
+              <Card key={post.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between">
+                    <h3 className="text-lg font-medium leading-none">{post.title}</h3>
+                    <div className="flex gap-1">
+                      {post.tags.map((tag) => (
+                        <span key={tag} className="bg-secondary text-xs px-2 py-0.5 rounded">
+                          {tag}
+                        </span>
+                      ))}
                     </div>
                   </div>
+                </CardHeader>
+                <CardContent className="pb-2">
                   <p className="text-sm text-muted-foreground line-clamp-2">{post.content}</p>
-                  <div className="post-footer">
-                    <div className="post-action">
-                      <ThumbsUp className="h-4 w-4" />
-                      <span className="text-xs">{post.likes}</span>
+                </CardContent>
+                <CardFooter className="border-t pt-2">
+                  <div className="w-full flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={post.author.avatar} />
+                        <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs text-muted-foreground">{post.author.name}</span>
                     </div>
-                    <div className="post-action">
-                      <MessageSquare className="h-4 w-4" />
-                      <span className="text-xs">{post.comments}</span>
-                    </div>
-                    <div className="post-action">
-                      <Eye className="h-4 w-4" />
-                      <span className="text-xs">{post.views}</span>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{post.likes} likes</span>
+                      <span>•</span>
+                      <span>{post.comments} comments</span>
                     </div>
                   </div>
-                </div>
-              );
-            })
+                </CardFooter>
+              </Card>
+            ))
           ) : (
-            // No posts
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No posts in this category yet.</p>
-              <Button variant="outline" className="mt-4">Be the first to post</Button>
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">No posts in this category yet</p>
             </div>
           )}
-        </div>
-      </div>
+        </TabsContent>
+        <TabsContent value="popular" className="space-y-4">
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">Popular posts coming soon</p>
+          </div>
+        </TabsContent>
+        <TabsContent value="unanswered" className="space-y-4">
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">Unanswered posts coming soon</p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </Layout>
   );
 };

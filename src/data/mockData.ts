@@ -91,7 +91,7 @@ export const posts: Post[] = [
   {
     id: '4',
     title: 'A lamp I printed for my wife',
-    description: 'The only thing that went wrong is that I put the USB on the body when the base is on... But not if it's upside 🙃 anyway',
+    description: 'The only thing that went wrong is that I put the USB on the body when the base is on... But not if it\'s upside down 🙃 anyway',
     authorId: '104',
     authorName: 'Chris Lee',
     authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chris',
@@ -168,7 +168,7 @@ export const posts: Post[] = [
   {
     id: '10',
     title: 'American-news',
-    description: 'Climate Change response exceeds United Nations expectations. Far-right rhetoric is defeated with idea talk of responsible citizenship. It's a healthy trope of individuals who are humantizing the civility.',
+    description: 'Climate Change response exceeds United Nations expectations. Far-right rhetoric is defeated with idea talk of responsible citizenship. It\'s a healthy trope of individuals who are humantizing the civility.',
     authorId: '110',
     authorName: 'American-news',
     authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=American',

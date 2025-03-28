@@ -24,11 +24,11 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   
   // Extended user info with mock data for display purposes
-  const user: UserWithExtendedInfo = {
-    ...authUser!,
+  const user: UserWithExtendedInfo | null = authUser ? {
+    ...authUser,
     joinDate: new Date().toISOString(),
     postCount: 5
-  };
+  } : null;
 
   const handleLogout = () => {
     logout();

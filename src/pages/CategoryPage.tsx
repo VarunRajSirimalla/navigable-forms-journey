@@ -6,17 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { categories, posts } from '@/data/mockData';
+import { categories, posts, users } from '@/data/mockData';
 
-interface Post {
+interface PostAuthor {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
+interface CategoryPost {
   id: string;
   title: string;
   content: string;
-  author: {
-    id: string;
-    name: string;
-    avatar: string;
-  };
+  author: PostAuthor;
   category: string;
   tags: string[];
   createdAt: string;
@@ -26,7 +28,7 @@ interface Post {
 
 const CategoryPage: React.FC = () => {
   const { categoryName } = useParams<{ categoryName: string }>();
-  const [categoryPosts, setCategoryPosts] = useState<Post[]>([]);
+  const [categoryPosts, setCategoryPosts] = useState<CategoryPost[]>([]);
   const [category, setCategory] = useState<any>(null);
   
   useEffect(() => {
@@ -34,9 +36,36 @@ const CategoryPage: React.FC = () => {
     const foundCategory = categories.find(cat => cat.slug === categoryName);
     setCategory(foundCategory);
     
-    // Filter posts by category
-    const filteredPosts = posts.filter(post => post.category === foundCategory?.name);
-    setCategoryPosts(filteredPosts);
+    // Filter posts by category and map to the proper structure
+    if (foundCategory) {
+      const filteredPosts = posts
+        .filter(post => post.categoryId === foundCategory.id)
+        .map(post => {
+          const author = users.find(user => user.id === post.authorId) || { 
+            id: 'unknown',
+            username: 'Unknown User',
+            avatar: ''
+          };
+          
+          return {
+            id: post.id,
+            title: post.title,
+            content: post.content,
+            author: {
+              id: author.id,
+              name: author.username,
+              avatar: author.avatar || ''
+            },
+            category: foundCategory.name,
+            tags: post.tags || [],
+            createdAt: post.createdAt,
+            likes: post.likes,
+            comments: post.comments
+          };
+        });
+        
+      setCategoryPosts(filteredPosts);
+    }
   }, [categoryName]);
 
   if (!category) {
